@@ -177,7 +177,7 @@ public class SudokuGrid {
     }
 
     public static void main(String[] args){
-        SudokuGrid sg = new SudokuGrid(Difficulty.Medium);
+        SudokuGrid sg = new SudokuGrid(Difficulty.MEDIUM);
         sg.resolve();
     }
 }
