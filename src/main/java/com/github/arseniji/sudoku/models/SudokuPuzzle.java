@@ -10,10 +10,10 @@ public class SudokuPuzzle {
     private final UUID id;
     private final Cell[][] cells;
     private final Difficulty difficulty;
-    private final int[][] solution;
+    private final Cell[][] solution;
     private final LocalDateTime createdAt;
 
-    public SudokuPuzzle(Cell[][] cells, int[][] solution, Difficulty difficulty){
+    public SudokuPuzzle(Cell[][] cells, Cell[][] solution, Difficulty difficulty){
         this.id = UUID.randomUUID();
         this.cells = cells;
         this.solution = solution;
@@ -33,7 +33,7 @@ public class SudokuPuzzle {
         return difficulty;
     }
 
-    public int[][] getSolution() {
+    public Cell[][] getSolution() {
         return solution;
     }
 

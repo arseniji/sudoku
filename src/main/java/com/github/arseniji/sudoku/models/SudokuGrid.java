@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 import static java.util.Collections.shuffle;
 
 public class SudokuGrid {
-    private final int[][] grid;
+    private int[][] grid;
     private int[][] solution;
     private final List<Integer> cords;
     private final Random random;
@@ -70,6 +70,23 @@ public class SudokuGrid {
                 else filled--;
             }
         }
+    }
+
+    private void resolve(){
+        int[][] grid = {
+                {0,0,0,0,9,3,0,0,0},
+                {0,0,8,2,0,0,3,0,0},
+                {0,7,0,0,0,0,0,4,0},
+                {0,6,0,0,0,0,0,0,3},
+                {2,0,7,0,0,0,1,0,0},
+                {5,0,0,0,0,8,0,0,9},
+                {7,0,0,0,8,0,0,0,0},
+                {0,0,0,0,6,0,8,0,4},
+                {8,0,2,0,4,5,0,0,1}
+        };
+        this.grid = grid;
+        generateBackTracking();
+        show();
     }
 
     private boolean hasSolution(){
@@ -157,5 +174,10 @@ public class SudokuGrid {
             copy[i] = grid[i].clone();
         }
         return copy;
+    }
+
+    public static void main(String[] args){
+        SudokuGrid sg = new SudokuGrid(Difficulty.Medium);
+        sg.resolve();
     }
 }
