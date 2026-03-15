@@ -5,5 +5,5 @@ import com.github.arseniji.sudoku.models.Cell;
 
 import java.util.UUID;
 
-public record PuzzleResponse(UUID id, Difficulty difficulty, Cell[][] cells) {
+public record PuzzleResponse(UUID id, Difficulty difficulty, CellDto[][] cells) {
 }
