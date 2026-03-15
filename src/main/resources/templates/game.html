@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Судоку — игра</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400&display=swap" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:          #0e0e10;
+            --surface:     #17171a;
+            --surface2:    #1e1e22;
+            --border:      #2a2a2f;
+            --border-bold: #444450;
+            --text:        #e8e8ec;
+            --muted:       #5a5a66;
+            --accent:      #c8f060;
+            --accent-dim:  #8aab2c;
+            --given:       #e8e8ec;
+            --player:      #c8f060;
+            --wrong:       #ff5f5f;
+            --selected-bg: #1f2a0f;
+            --selected-br: #c8f060;
+            --highlight:   #1a1a1e;
+            --easy:        #60d4f0;
+            --medium:      #f0c060;
+            --hard:        #f06060;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px;
+            gap: 28px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        /* ── Header ── */
+        header {
+            position: relative;
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeDown 0.4s ease both;
+        }
+
+        .back-btn {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--text); }
+        .back-btn::before { content: '←'; font-size: 1rem; }
+
+        .header-title {
+            font-family: 'DM Mono', monospace;
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+
+        .diff-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 2px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .badge-EASY   { background: #0d2a30; color: var(--easy);   border: 1px solid #1a4a56; }
+        .badge-MEDIUM { background: #2e2200; color: var(--medium); border: 1px solid #5a4200; }
+        .badge-HARD   { background: #2e0a0a; color: var(--hard);   border: 1px solid #5a1a1a; }
+
+        /* ── Timer ── */
+        .timer {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            animation: fadeDown 0.4s ease 0.1s both;
+        }
+
+        /* ── Grid ── */
+        .grid-wrapper {
+            position: relative;
+            animation: fadeUp 0.5s ease 0.15s both;
+        }
+
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            width: min(90vw, 468px);
+            height: min(90vw, 468px);
+            border: 2px solid var(--border-bold);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Mono', monospace;
+            font-size: clamp(1rem, 3.5vw, 1.4rem);
+            font-weight: 400;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.1s;
+            user-select: none;
+            position: relative;
+        }
+
+        /* Bold borders for 3x3 blocks */
+        .cell[data-col="2"], .cell[data-col="5"] { border-right: 2px solid var(--border-bold); }
+        .cell[data-row="2"], .cell[data-row="5"] { border-bottom: 2px solid var(--border-bold); }
+
+        .cell.given {
+            color: var(--given);
+            background: var(--surface);
+            cursor: default;
+        }
+
+        .cell.player {
+            color: var(--player);
+            background: var(--bg);
+        }
+
+        .cell.empty {
+            color: transparent;
+            background: var(--bg);
+        }
+
+        .cell.selected {
+            background: var(--selected-bg) !important;
+            outline: 2px solid var(--selected-br);
+            outline-offset: -2px;
+            z-index: 2;
+        }
+
+        .cell.highlight {
+            background: var(--highlight);
+        }
+
+        .cell.wrong {
+            color: var(--wrong) !important;
+            background: #1f0a0a;
+        }
+
+        .cell:hover:not(.given):not(.selected) {
+            background: #1a2010;
+        }
+
+        /* ── Numpad ── */
+        .numpad {
+            display: flex;
+            gap: 8px;
+            animation: fadeUp 0.5s ease 0.25s both;
+        }
+
+        .num-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .num-btn:hover {
+            background: var(--surface2);
+            border-color: var(--accent-dim);
+            transform: translateY(-2px);
+        }
+        .num-btn:active { transform: translateY(0); }
+
+        .num-btn.erase {
+            font-size: 0.8rem;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Actions ── */
+        .actions {
+            display: flex;
+            gap: 10px;
+            animation: fadeUp 0.5s ease 0.3s both;
+        }
+
+        .action-btn {
+            padding: 10px 22px;
+            border-radius: 3px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .btn-validate {
+            background: var(--surface);
+            color: var(--text);
+        }
+        .btn-validate:hover {
+            background: var(--surface2);
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .btn-solve {
+            background: transparent;
+            color: var(--muted);
+        }
+        .btn-solve:hover {
+            color: var(--text);
+            border-color: var(--muted);
+        }
+
+        .btn-new {
+            background: var(--accent);
+            color: #0e0e10;
+            border-color: var(--accent);
+            font-weight: 500;
+        }
+        .btn-new:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent-dim);
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface2);
+            border: 1px solid var(--border-bold);
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast.success { color: var(--accent); border-color: var(--accent-dim); }
+        .toast.error   { color: var(--wrong);  border-color: #7a2020; }
+
+        @keyframes fadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <a class="back-btn" th:href="@{/}">Главная</a>
+    <span class="header-title">судоку</span>
+    <span class="diff-badge"
+          th:classappend="'badge-' + ${puzzle.difficulty}"
+          th:text="${puzzle.difficulty}">MEDIUM</span>
+</header>
+
+<div class="timer" id="timer">00:00</div>
+
+<div class="grid-wrapper">
+    <div class="sudoku-grid" id="grid">
+        <th:block th:each="row, rowStat : ${puzzle.cells}">
+            <div th:each="cell, colStat : ${row}"
+                 class="cell"
+                 th:classappend="${cell.isGen()} ? 'given' : (${cell.value} != 0 ? 'player' : 'empty')"
+                 th:attr="data-row=${rowStat.index},
+                      data-col=${colStat.index},
+                      data-given=${cell.isGen()},
+                      data-value=${cell.value}"
+                 th:text="${cell.value != 0} ? ${cell.value} : ''">
+            </div>
+        </th:block>
+    </div>
+</div>
+
+<div class="numpad">
+    <button class="num-btn" th:each="n : ${#numbers.sequence(1,9)}"
+            th:text="${n}" th:attr="data-num=${n}"></button>
+    <button class="num-btn erase" data-num="0">DEL</button>
+</div>
+
+<div class="actions">
+    <button class="action-btn btn-validate" id="btnValidate">Проверить</button>
+    <button class="action-btn btn-solve"    id="btnSolve">Решение</button>
+    <a class="action-btn btn-new" th:href="@{/game(difficulty=${puzzle.difficulty})}">Новая</a>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script th:inline="javascript">
+    const PUZZLE_ID = /*[[${puzzleId}]]*/ '';
+    const DIFFICULTY  = /*[[${puzzle.difficulty}]]*/ 'MEDIUM';
+
+    // ── Timer ──
+    let seconds = 0;
+    const timerEl = document.getElementById('timer');
+    const tick = setInterval(() => {
+        seconds++;
+        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+
+    // ── State ──
+    let selected = null;
+
+    const cells = Array.from(document.querySelectorAll('.cell'));
+
+    function getCell(row, col) {
+        return cells.find(c => +c.dataset.row === row && +c.dataset.col === col);
+    }
+
+    // ── Selection & highlight ──
+    function selectCell(cell) {
+        if (cell.dataset.given === 'true') return;
+        cells.forEach(c => c.classList.remove('selected', 'highlight'));
+        selected = cell;
+        cell.classList.add('selected');
+
+        const r = +cell.dataset.row;
+        const c = +cell.dataset.col;
+        const br = Math.floor(r / 3) * 3;
+        const bc = Math.floor(c / 3) * 3;
+
+        cells.forEach(cl => {
+            const cr = +cl.dataset.row, cc = +cl.dataset.col;
+            if (cl === cell) return;
+            if (cr === r || cc === c ||
+                (cr >= br && cr < br+3 && cc >= bc && cc < bc+3))
+                cl.classList.add('highlight');
+        });
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', () => selectCell(cell)));
+
+    // ── Input ──
+    function enterDigit(num) {
+        if (!selected) return;
+        selected.dataset.value = num;
+        selected.textContent   = num === 0 ? '' : num;
+        selected.classList.remove('wrong', 'player', 'empty');
+        selected.classList.add(num === 0 ? 'empty' : 'player');
+    }
+
+    document.querySelectorAll('.num-btn').forEach(btn => {
+        btn.addEventListener('click', () => enterDigit(+btn.dataset.num));
+    });
+
+    document.addEventListener('keydown', e => {
+        if (!selected) return;
+        if (e.key >= '1' && e.key <= '9') enterDigit(+e.key);
+        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') enterDigit(0);
+
+        // Arrow navigation — skip given cells
+        const r = +selected.dataset.row;
+        const c = +selected.dataset.col;
+        const moves = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
+        if (moves[e.key]) {
+            e.preventDefault();
+            let [dr, dc] = moves[e.key];
+            let nr = (r + dr + 9) % 9, nc = (c + dc + 9) % 9;
+            const next = getCell(nr, nc);
+            if (next) selectCell(next);
+        }
+    });
+
+    // ── Toast ──
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className   = `toast ${type} show`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    // ── Build grid for API ──
+    function buildGrid() {
+        const grid = Array.from({length: 9}, () => Array(9).fill(0));
+        cells.forEach(c => { grid[+c.dataset.row][+c.dataset.col] = +c.dataset.value || 0; });
+        return grid;
+    }
+
+    // ── Validate ──
+    document.getElementById('btnValidate').addEventListener('click', async () => {
+        const res = await fetch('/puzzle/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: PUZZLE_ID, cells: buildGrid() })
+        });
+        const data = await res.json();
+
+        cells.forEach(c => c.classList.remove('wrong'));
+
+        if (data.correct) {
+            clearInterval(tick);
+            showToast('✓ Решено верно!', 'success');
+        } else {
+            data.wrongs?.forEach(w => {
+                const cell = getCell(w.row, w.col);
+                if (cell && cell.dataset.given !== 'true') cell.classList.add('wrong');
+            });
+            showToast(`✗ Ошибок: ${data.wrongs?.length ?? '?'}`, 'error');
+        }
+    });
+
+    // ── Solve ──
+    document.getElementById('btnSolve').addEventListener('click', async () => {
+        const res  = await fetch('/puzzle/solve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: PUZZLE_ID })
+        });
+        const data = await res.json();
+
+        clearInterval(tick);
+        cells.forEach(c => c.classList.remove('wrong', 'selected', 'highlight'));
+        selected = null;
+
+        data.cells.forEach(row => row.forEach(cell => {
+            const el = getCell(cell.row, cell.col);
+            if (!el) return;
+            el.dataset.value = cell.value;
+            el.textContent   = cell.value;
+            el.classList.remove('empty', 'player', 'wrong');
+            el.classList.add(cell.isGen ? 'given' : 'player');
+        }));
+
+        showToast('Решение показано', 'success');
+    });
+</script>
+</body>
+</html>

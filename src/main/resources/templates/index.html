@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Судоку</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400&display=swap" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #0e0e10;
+            --surface:   #17171a;
+            --border:    #2a2a2f;
+            --text:      #e8e8ec;
+            --muted:     #5a5a66;
+            --accent:    #c8f060;
+            --accent-dim:#8aab2c;
+            --danger:    #ff5f5f;
+            --easy:      #60d4f0;
+            --medium:    #f0c060;
+            --hard:      #f06060;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .hero {
+            position: relative;
+            text-align: center;
+            padding: 0 24px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .logo {
+            font-family: 'DM Mono', monospace;
+            font-size: clamp(4rem, 12vw, 9rem);
+            font-weight: 300;
+            letter-spacing: -0.04em;
+            line-height: 0.9;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            font-weight: 200;
+            color: var(--muted);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 64px;
+        }
+
+        .difficulty-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .difficulty-grid {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .diff-btn {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 20px 28px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text);
+            width: 140px;
+            transition: border-color 0.2s, transform 0.2s, background 0.2s;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .diff-btn:nth-child(1) { animation-delay: 0.1s; }
+        .diff-btn:nth-child(2) { animation-delay: 0.18s; }
+        .diff-btn:nth-child(3) { animation-delay: 0.26s; }
+
+        .diff-btn:hover {
+            background: #1e1e22;
+            transform: translateY(-3px);
+        }
+
+        .diff-btn.easy:hover   { border-color: var(--easy); }
+        .diff-btn.medium:hover { border-color: var(--medium); }
+        .diff-btn.hard:hover   { border-color: var(--hard); }
+
+        .diff-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-bottom: 4px;
+        }
+        .easy   .diff-dot { background: var(--easy); }
+        .medium .diff-dot { background: var(--medium); }
+        .hard   .diff-dot { background: var(--hard); }
+
+        .diff-name {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .diff-clues {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div class="logo">SU<span>·</span>DO<span>·</span>KU</div>
+    <div class="subtitle">логическая головоломка</div>
+
+    <div class="difficulty-label">выберите сложность</div>
+    <div class="difficulty-grid">
+        <a class="diff-btn easy" th:href="@{/game(difficulty='EASY')}">
+            <div class="diff-dot"></div>
+            <div class="diff-name">Easy</div>
+            <div class="diff-clues">~36 подсказок</div>
+        </a>
+        <a class="diff-btn medium" th:href="@{/game(difficulty='MEDIUM')}">
+            <div class="diff-dot"></div>
+            <div class="diff-name">Medium</div>
+            <div class="diff-clues">~28 подсказок</div>
+        </a>
+        <a class="diff-btn hard" th:href="@{/game(difficulty='HARD')}">
+            <div class="diff-dot"></div>
+            <div class="diff-name">Hard</div>
+            <div class="diff-clues">~22 подсказки</div>
+        </a>
+    </div>
+</div>
+</body>
+</html>
