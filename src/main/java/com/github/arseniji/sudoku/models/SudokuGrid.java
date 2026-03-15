@@ -9,9 +9,10 @@ import java.util.stream.IntStream;
 import static java.util.Collections.shuffle;
 
 public class SudokuGrid {
-    private int[][] grid;
-    private List<Integer> cords;
-    private Random random;
+    private final int[][] grid;
+    private int[][] solution;
+    private final List<Integer> cords;
+    private final Random random;
     public SudokuGrid(Difficulty difficulty){
         this.grid = new int[9][9];
         this.cords = new ArrayList<>(IntStream.rangeClosed(0,80).boxed().toList());
@@ -22,6 +23,7 @@ public class SudokuGrid {
     private void fill(){
         generateDiagonalBlocks();
         generateBackTracking();
+        this.solution = copy(grid);
     }
 
     private void generateDiagonalBlocks(){
@@ -143,5 +145,17 @@ public class SudokuGrid {
 
     public int[][] getGrid(){
         return grid;
+    }
+
+    public int[][] getSolution(){
+        return solution;
+    }
+
+    private int[][] copy(int[][] grid){
+        int [][] copy = new int[9][9];
+        for (int i = 0; i< 9; i++){
+            copy[i] = grid[i].clone();
+        }
+        return copy;
     }
 }
