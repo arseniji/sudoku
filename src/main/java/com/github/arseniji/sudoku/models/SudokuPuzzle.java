@@ -21,4 +21,23 @@ public class SudokuPuzzle {
         this.createdAt = LocalDateTime.now();
     }
 
+    public UUID getId() {
+        return id;
+    }
+
+    public Cell[][] getCells() {
+        return cells;
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
+    }
+
+    public int[][] getSolution() {
+        return solution;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }
