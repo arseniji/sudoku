@@ -1,25 +1,23 @@
-package com.github.arseniji.sudoku;
+package com.github.arseniji.sudoku.models;
+
+import com.github.arseniji.sudoku.enums.Difficulty;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import static java.util.Collections.shuffle;
 
-public class SudokuService {
+public class SudokuGrid {
     private int[][] grid;
     private List<Integer> cords;
     private Random random;
-    public SudokuService(){
+    public SudokuGrid(Difficulty difficulty){
         this.grid = new int[9][9];
         this.cords = new ArrayList<>(IntStream.rangeClosed(0,80).boxed().toList());
         this.random = new Random();
         fill();
-        generatePuzzle(17);
-        show();
+        generatePuzzle(difficulty.getValue());
     }
     private void fill(){
         generateDiagonalBlocks();
@@ -63,7 +61,7 @@ public class SudokuService {
             shuffle(cords);
             for (Integer cord : cords) {
                 if (filled <= cluesToLeave) break;
-                if (grid[cord/9][cord%9] == 0) continue; // уже пустая
+                if (grid[cord/9][cord%9] == 0) continue;
                 int saved = grid[cord/9][cord%9];
                 grid[cord/9][cord%9] = 0;
                 if (!hasSolution()) grid[cord/9][cord%9] = saved;
@@ -86,10 +84,8 @@ public class SudokuService {
         for (int number = 1; number <= 9; number++) {
             if (isValidNumber(number, row, col)) {
                 grid[row][col] = number;
-
                 int nextCol = col + 1, nextRow = row;
                 if (nextCol == 9) { nextCol = 0; nextRow++; }
-
                 solutionsFound += countSolutionsRec(nextRow, nextCol, limit - solutionsFound);
                 grid[row][col] = 0;
 
@@ -136,7 +132,7 @@ public class SudokuService {
         return validNumbers.get(random.nextInt(validNumbers.size()));
     }
 
-    private void show(){
+    public void show(){
         for (int i =0;i < 9;i++){
             for (int j = 0; j < 9; j++){
                 System.out.print(grid[i][j] + " ");
@@ -145,10 +141,7 @@ public class SudokuService {
         }
     }
 
-
-    public static void main(String[] args) {
-        SudokuService service = new SudokuService();
-        int solutions = service.countSolutionsRec(0, 0, Integer.MAX_VALUE);
-        System.out.println("Найдено решений: " + solutions);
+    public int[][] getGrid(){
+        return grid;
     }
 }
